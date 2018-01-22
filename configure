@@ -15,7 +15,7 @@ echo "build on "${ARCH}"!"
 
 #********************************************************************************
 # check for external system tools
-. configure.in/exttools.inc
+# . configure.in/exttools.inc
 
 #********************************************************************************
 # Checking conf-* files

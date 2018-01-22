@@ -19,6 +19,8 @@ compile
 makelib
 load
 
+has*.h
+
 # ignore all binaries:
 
   qmail-authuser

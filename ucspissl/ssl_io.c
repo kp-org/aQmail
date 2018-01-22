@@ -10,12 +10,11 @@
 
 
 /* temp: backwards compat */
-int buffer_unixread(int fd,char *buf,unsigned int len) {
-  return read(fd,buf,len); }
+//int buffer_unixread(int fd,char *buf,unsigned int len) {
+//  return read(fd,buf,len); }
 /* temp: backwards compat */
-int buffer_unixwrite(int fd,const char *buf,unsigned int len) {
-  return write(fd,buf,len); }
-
+// int buffer_unixwrite(int fd,const char *buf,unsigned int len) {
+//   return write(fd,buf,len); }
 
 static int leftstatus = 0;
 static char leftbuf[16 * 1024];
