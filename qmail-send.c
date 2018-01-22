@@ -237,7 +237,7 @@ void comm_do(fd_set *wfds)
 
           w = write(chanfdout[c],comm_buf[c].s + comm_pos[c],len - comm_pos[c]);
           if (w <= 0) {
-	    if ((w == -1) && (errno == error_pipe))
+	    if ((w == -1) && (errno == EPIPE))
 	      spawndied(c);
   	    else
 	      continue; /* kernel select() bug; can't avoid busy-looping */
@@ -292,11 +292,11 @@ void cleanup_do()
 
   fnmake_info(id);
   if (stat(fn.s,&st) == 0) return;
-  if (errno != error_noent) return;
+  if (errno != ENOENT) return;
 
   fnmake_todo(id);
   if (stat(fn.s,&st) == 0) return;
-  if (errno != error_noent) return;
+  if (errno != ENOENT) return;
 
   fnmake_foop(id);
   if (substdio_putflush(&sstoqc,fn.s,fn.len) == -1) { cleandied(); return; }
@@ -322,7 +322,7 @@ void pqadd(unsigned long id)
   struct stat st;
   int c;
 
-#define CHECKSTAT if (errno != error_noent) goto fail;
+#define CHECKSTAT if (errno != ENOENT) goto fail;
 
   fnmake_info(id);
   if (stat(fn.s,&st) == -1) {
@@ -471,7 +471,7 @@ void job_close(int j)
       for (c = 0; c < CHANNELS; ++c) if (c != jo[j].channel) {
         fnmake_chanaddr(jo[j].id,c);
         if (stat(fn.s,&st) == 0) return; /* more channels going */
-        if (errno != error_noent) {
+        if (errno != ENOENT) {
           log3s("warning: unable to stat ",fn.s,"\n");
 	  break; /* this is the only reason for HOPEFULLY */
 	}
@@ -595,7 +595,7 @@ int injectbounce(unsigned long id)
   fnmake_mess(id);
 
   if (stat(fn2.s,&st) == -1) {
-    if (errno == error_noent) return 1;
+    if (errno == ENOENT) return 1;
     log3s("warning: unable to stat ",fn2.s,"\n");
     return 0;
   }
@@ -1065,7 +1065,7 @@ void messdone(unsigned long id)
   for (c = 0; c < CHANNELS; ++c) {
     fnmake_chanaddr(id,c);
     if (stat(fn.s,&st) == 0) return; /* false alarm; consequence of HOPEFULLY */
-    if (errno != error_noent) {
+    if (errno != ENOENT) {
       log3s("warning: unable to stat ",fn.s,"; will try again later\n");
       goto fail;
     }
@@ -1073,14 +1073,14 @@ void messdone(unsigned long id)
 
   fnmake_todo(id);
   if (stat(fn.s,&st) == 0) return;
-  if (errno != error_noent) {
+  if (errno != ENOENT) {
     log3s("warning: unable to stat ",fn.s,"; will try again later\n");
     goto fail;
    }
  
   fnmake_info(id);
   if (stat(fn.s,&st) == -1) {
-    if (errno == error_noent) return;
+    if (errno == ENOENT) return;
     log3s("warning: unable to stat ",fn.s,"; will try again later\n");
     goto fail;
   }
@@ -1370,7 +1370,7 @@ int main()
     do
       r = read(chanfdin[c],&ch,1);
 
-    while ((r == -1) && (errno == error_intr));
+    while ((r == -1) && (errno == EINTR));
     if (r < 1) { log1s("alert: cannot start: hath the daemon spawn no fire?\n"); _exit(111); }
 
     u = (unsigned int) (unsigned char) ch;
@@ -1411,7 +1411,7 @@ int main()
     tv.tv_usec = 0;
 
     if (select(nfds,&rfds,&wfds,(fd_set *) 0,&tv) == -1)
-      if (errno == error_intr)
+      if (errno == EINTR)
         ;
       else
         log1s("warning: trouble in select\n");
