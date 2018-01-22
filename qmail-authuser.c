@@ -170,7 +170,7 @@ int auth_unix(char *user,char* response)
   if (pw)
     stored = pw->pw_passwd;
   else {
-    if (errno == error_txtbsy) auth_exit(111);
+    if (errno == ETXTBSY) auth_exit(111);
     auth_exit(1);
   }
 
@@ -179,14 +179,14 @@ int auth_unix(char *user,char* response)
   if (upw)
     stored = upw->upw_passwd;
   else
-    if (errno == error_txtbsy) auth_exit(111);
+    if (errno == ETXTBSY) auth_exit(111);
 #endif
 #ifdef HASGETSPNAM
   spw = getspnam(user);
   if (spw)
     stored = spw->sp_pwdp;
   else
-    if (errno == error_txtbsy) auth_exit(111);
+    if (errno == ETXTBSY) auth_exit(111);
 #endif
   if (!stored || !*stored) auth_exit(111);
   encrypted = crypt(response,stored);
@@ -311,7 +311,7 @@ int main(int argc,char **argv)
   for (;;) {						/* read input */
     do
       r = read(FDAUTH,authbuf + buflen,sizeof(authbuf) - buflen);
-    while ((r == -1) && (errno == error_intr));
+    while ((r == -1) && (errno == EINTR));
     if (r == -1) auth_exit(111);
     if (r == 0) break;
     buflen += r;

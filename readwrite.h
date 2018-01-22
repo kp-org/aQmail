@@ -1,11 +1,10 @@
+/* original definitions of readwrite.h - use this
+   file if <unistd.h> forces compiler warnings.
+   (@Kai Peter)                                */
 #ifndef READWRITE_H
 #define READWRITE_H
 
-#include <unistd.h>
-/* Already in unistd.h */
-/*
-int read();
-int write();
-*/
+extern int read();
+extern int write();
 
 #endif

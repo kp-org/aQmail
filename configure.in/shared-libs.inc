@@ -30,10 +30,10 @@ echo -n "Checking for libcrypto ..."
 [ -s crypto.lib ] || echo -n " not"
 echo " found!"
 
-echo -n "Checking for libdl ..."
-((./load trylib -lssl) >/dev/null 2>&1 && echo "-ldl" || exit 0)> dl.lib
-[ -s dl.lib ] || echo -n " not"
-echo " found!"
+#echo -n "Checking for libdl ..."
+#((./load trylib -lssl) >/dev/null 2>&1 && echo "-ldl" || exit 0)> dl.lib
+#[ -s dl.lib ] || echo -n " not"
+#echo " found!"
 
 # put libssl.so and libcrypto.so together
 [ -s ssl.lib ] && [ -s crypto.lib ] && echo `cat ssl.lib` `cat crypto.lib` > ssl.lib

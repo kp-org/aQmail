@@ -1,6 +1,6 @@
 #ifndef FIFO_H
 #define FIFO_H
 
-int fifo_make(char *,int);
+extern int fifo_make();
 
 #endif

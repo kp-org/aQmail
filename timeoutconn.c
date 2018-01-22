@@ -10,9 +10,9 @@
 #include "ipalloc.h"
 #include "byte.h"
 #include "timeoutconn.h"
-#include "socket6_if.h"
+#include "socket_if.h"
 
-int timeoutconn(int s,struct ip_address *ip,unsigned int port,int timeout)
+int timeoutconn4(int s,struct ip_address *ip,unsigned int port,int timeout)
 {
   char ch;
   struct sockaddr_in sin;
@@ -34,7 +34,7 @@ int timeoutconn(int s,struct ip_address *ip,unsigned int port,int timeout)
     ndelay_off(s);
     return 0;
   }
-  if ((errno != error_inprogress) && (errno != error_wouldblock)) return -1;
+  if ((errno != EINPROGRESS) && (errno != EWOULDBLOCK)) return -1;
  
   FD_ZERO(&wfds);
   FD_SET(s,&wfds);
@@ -52,7 +52,7 @@ int timeoutconn(int s,struct ip_address *ip,unsigned int port,int timeout)
     return 0;
   }
  
-  errno = error_timeout; /* note that connect attempt is continuing */
+  errno = ETIMEDOUT; /* note that connect attempt is continuing */
   return -1;
 }
 
@@ -77,7 +77,7 @@ int timeoutconn6(int s,struct ip6_address *ip,unsigned int port,int timeout,char
     ndelay_off(s);
     return 0;
   }
-  if ((errno != error_inprogress) && (errno != error_wouldblock)) return -1;
+  if ((errno != EINPROGRESS) && (errno != EWOULDBLOCK)) return -1;
 
   FD_ZERO(&wfds);
   FD_SET(s,&wfds);
@@ -95,15 +95,15 @@ int timeoutconn6(int s,struct ip6_address *ip,unsigned int port,int timeout,char
     return 0;
   }
 
-  errno = error_timeout; /* note that connect attempt is continuing */
+  errno = ETIMEDOUT; /* note that connect attempt is continuing */
   return -1;
 }
 
-int timeoutconn46(int fd,struct ip_mx *ix,int port,int timeout)
+int timeoutconn(int fd,struct ip_mx *ix,int port,int timeout)
 {
 
   switch(ix->af) {
     case AF_INET6: return timeoutconn6(fd,&ix->addr.ip6,port,timeout,0); 
-    case AF_INET:  return timeoutconn(fd,&ix->addr.ip,port,timeout); 
+    case AF_INET:  return timeoutconn4(fd,&ix->addr.ip4,port,timeout); 
   }
 }
