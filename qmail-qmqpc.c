@@ -1,6 +1,9 @@
 /*
  *  Revision 20170926, Kai Peter
  *  - changed 'control' directory name to 'etc'
+ *  Revision 20171214, Erwin Hoffmann
+ *  - changed stralloc ip4/ip6 to char ip4[4]/ip[16]
+ *  - changed netif to scope_id
 */
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -28,7 +31,7 @@
 void die_success() { _exit(0); }
 void die_perm() { _exit(31); }
 void nomem() { _exit(51); }
-void die_read() { if (errno == error_nomem) nomem(); _exit(54); }
+void die_read() { if (errno == ENOMEM) nomem(); _exit(54); }
 void die_control() { _exit(55); }
 void die_socket() { _exit(56); }
 void die_home() { _exit(61); }
@@ -106,9 +109,11 @@ void getmess()
 
 void doit(char *server)
 {
-  struct ip_address ip4;
-  struct ip6_address ip6;
-  char *netif = 0;
+  char ip4[4];
+  char ip6[16];
+//  struct ip_address ip4;
+//  struct ip6_address ip6;
+  char *scope_id = 0;
   char ch;
   int i, j, r;
 
@@ -117,21 +122,21 @@ void doit(char *server)
     j = str_chr(server,'%');                                   /* if index */
     if (j > 0 && server[j]) {
       server[j] = 0;
-      netif = &server[j+1];
+      scope_id = &server[j+1];
     } 
-    if (!ip6_scan(&ip6,server)) return;
+    if (!ip6_scan(ip6,server)) return;
     qmqpfd = socket(AF_INET6,SOCK_STREAM,0);
     if (qmqpfd == -1) die_socket();
-    r = timeoutconn6(qmqpfd,&ip6,PORT_QMQP,10,netif);
+    r = timeoutconn6(qmqpfd,&ip6,PORT_QMQP,10,scope_id);
   } else {
-    if (!ip4_scan(&ip4,server)) return;
+    if (!ip4_scan(ip4,server)) return;
     qmqpfd = socket(AF_INET,SOCK_STREAM,0);
     if (qmqpfd == -1) die_socket();
     r = timeoutconn(qmqpfd,&ip4,PORT_QMQP,10);
   }
   if (r != 0) {
     lasterror = 73;
-    if (errno == error_timeout) lasterror = 72;
+    if (errno == ETIMEDOUT) lasterror = 72;
     close(qmqpfd);
     return;
   }

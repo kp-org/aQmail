@@ -1,3 +1,8 @@
+/*
+ *  Revision 20171214, Erwin Hoffmann
+ *  - changed ip to ip4 in struct ip4_address
+*/
+
 #ifndef IPALLOC_H
 #define IPALLOC_H
 
@@ -6,8 +11,10 @@
 struct ip_mx {
   unsigned short af;
   union {
-    struct ip_address ip;
-    struct ip6_address ip6;
+//    struct ip4_address ip4;
+//    struct ip6_address ip6;
+      char ip4[4];
+      char ip6[16];
     } addr;
   int pref;
 };

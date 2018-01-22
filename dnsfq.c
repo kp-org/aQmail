@@ -30,7 +30,7 @@ int main(int argc,char **argv)
 
   switch(ia.ix[0].af) {
     case AF_INET:
-      dnsdoe(dns_ptr(&ssa,&ia.ix[0].addr.ip)); break;
+      dnsdoe(dns_ptr4(&ssa,&ia.ix[0].addr.ip4)); break;
     case AF_INET6:
       dnsdoe(dns_ptr6(&ssa,&ia.ix[0].addr.ip6)); break;
   }

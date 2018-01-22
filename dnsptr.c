@@ -13,8 +13,8 @@
 strsalloc ssa = {0};
 ipalloc ia = {0};
  
-struct ip_address ip;
-struct ip6_address ip6;
+char ip4[4];
+char ip6[16];
 
 int main(int argc,char **argv)
 {
@@ -28,15 +28,16 @@ int main(int argc,char **argv)
   k = str_chr(argv[1],':');
 
   if (k > 0 && k > str_len(argv[1])) {
-    if (!ip6_scan(&ip6,argv[1])) _exit(1);
-    dnsdoe(dns_ptr6(&ssa,&ia.ix[0].addr.ip6));
+    if (!ip6_scan(ip6,argv[1])) _exit(1);
+//    dnsdoe(dns_ptr6(&ssa,&ia.ix[0].addr.ip6));
+    dnsdoe(dns_ptr6(&ssa,ip6));
   }
   else {
-    if (!ip4_scan(&ip,argv[1])) _exit(1);
-    dnsdoe(dns_ptr(&ssa,&ip));
+    if (!ip4_scan(ip4,argv[1])) _exit(1);
+    dnsdoe(dns_ptr4(&ssa,ip4));
   }
  
-  for (j = 0;j < ssa.len;++j) { 
+  for (j = 0; j < ssa.len; ++j) { 
     substdio_putflush(subfdout,ssa.sa[j].s,ssa.sa[j].len);
     substdio_putsflush(subfdout,"\n");
   }

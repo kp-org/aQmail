@@ -18,7 +18,7 @@ int main()
    case -1: substdio_putsflush(subfderr,"hard error\n"); _exit(100);
  }
 
- for (j = 0;j < ipme.len;++j) {
+ for (j = 0; j < ipme.len; ++j) {
    switch(ipme.ix[j].af) {
      case AF_INET:
        substdio_put(subfdout,ipaddr,ip4_fmt(ipaddr,&ipme.ix[j].addr));

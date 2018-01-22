@@ -1,4 +1,5 @@
 /* XXX: this program knows quite a bit about tcpto's internals */
+/* feh, changed struct ipX_address to char; 20171231 */
 
 #include <sys/socket.h>
 #include "substdio.h"
@@ -41,8 +42,10 @@ int main(void)
  int r;
  int i;
  char *record;
- struct ip_address ip;
- struct ip6_address ip6;
+// struct ip_address ip;
+// struct ip6_address ip6;
+ char ip4[4];
+ char ip6[16];
  datetime_sec when;
  datetime_sec start;
 
@@ -64,7 +67,7 @@ int main(void)
  start = now();
  record = tcpto_buf;
 
- for (i = 0;i < r;++i) {
+ for (i = 0; i < r; ++i) {
    if (record[4] >= 1) {
      when = (unsigned long) (unsigned char) record[11];
      when = (when << 8) + (unsigned long) (unsigned char) record[10];
@@ -72,11 +75,11 @@ int main(void)
      when = (when << 8) + (unsigned long) (unsigned char) record[8];
 
      if (record[0] == AF_INET) {
-       byte_copy(&ip,4,record+16);
-       substdio_put(subfdout,tmp,ip4_fmt(tmp,&ip));
+       byte_copy(ip4,4,record+16);
+       substdio_put(subfdout,tmp,ip4_fmt(tmp,ip4));
      } else {
-       byte_copy(&ip6,16,record+16);
-       substdio_put(subfdout,tmp,ip6_fmt(tmp,&ip6));
+       byte_copy(ip6,16,record+16);
+       substdio_put(subfdout,tmp,ip6_fmt(tmp,ip6));
      }
      substdio_puts(subfdout," timed out ");
      substdio_put(subfdout,tmp,fmt_ulong(tmp,(unsigned long) (start - when)));

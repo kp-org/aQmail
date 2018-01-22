@@ -1,6 +1,8 @@
 /*
  *  Revision 20170926, Kai Peter
  *  - changed 'control' directory name to 'etc'
+ *  Revision 20171214, Erwin Hoffmann
+ *  - changed struct domainip4/domainip6 to char domainip4[4]/domainip6[16]
 */
 #ifdef IDN2
 #include <idn2.h>
@@ -37,7 +39,7 @@
 #include "timeoutread.h"
 #include "timeoutwrite.h"
 #include "base64.h"
-#include "socket6_if.h"
+#include "socket_if.h"
 #include "ucspitls.h" 
 #include "tls_remote.h"
 #include "tls_errors.h"
@@ -79,8 +81,8 @@ stralloc sendip = {0};
 
 stralloc domainips = {0};
 struct constmap mapdomainips;
-struct ip_address domainip4;
-struct ip6_address domainip6;
+//struct ip_address domainip4;
+//struct ip6_address domainip6;
 unsigned long scope_id;
 
 stralloc smtproutes = {0};
@@ -91,6 +93,9 @@ struct constmap mapqmtproutes;
 saa reciplist = {0};
 
 struct ip_mx partner;
+
+char domainip4[4];
+char domainip6[16];
 
 SSL *ssl;
 SSL_CTX *ctx; 
@@ -224,7 +229,7 @@ void outhost()
 
   switch(partner.af) {
     case AF_INET:
-      len = ip4_fmt(ipaddr,&partner.addr.ip); break;
+      len = ip4_fmt(ipaddr,&partner.addr.ip4); break;
     case AF_INET6:
       len = ip6_fmt(ipaddr,&partner.addr.ip6); break;
   } 
@@ -1295,7 +1300,7 @@ int main(int argc,char **argv)
  
   prefme = 100000;
   for (i = 0; i < ip.len; ++i)
-    if (ipme_is46(&ip.ix[i]))
+    if (ipme_is(&ip.ix[i]))
       if (ip.ix[i].pref < prefme)
         prefme = ip.ix[i].pref;
  
@@ -1322,7 +1327,7 @@ int main(int argc,char **argv)
          if (j && localip[j] == ':') flaglocalip6 = 1;
 
          if (flaglocalip6 && ip.ix[i].af == AF_INET6) {
-           if (!ip6_scan(&domainip6,localip)) temp_noip();		/* IPv6 */
+           if (!ip6_scan(domainip6,localip)) temp_noip();		/* IPv6 */
 
            byte_zero((char *)&s6,sizeof(s6));
            s6.sin6_family = AF_INET6;
@@ -1334,7 +1339,7 @@ int main(int argc,char **argv)
            if (bind(smtpfd,(struct sockaddr *)&s6,sizeof(s6)) < 0) temp_osip();
          }
          if (!flaglocalip6 && ip.ix[i].af == AF_INET) {
-           if (!ip4_scan(&domainip4,localip)) temp_noip();		/* IPv4 */
+           if (!ip4_scan(domainip4,localip)) temp_noip();		/* IPv4 */
    
            byte_zero((char *)&s4,sizeof(s4));
            s4.sin_family = AF_INET;
@@ -1345,7 +1350,7 @@ int main(int argc,char **argv)
          }
       } 
 
-      if (timeoutconn46(smtpfd,&ip.ix[i],(unsigned int) port,timeoutconnect) == 0) { 
+      if (timeoutconn(smtpfd,&ip.ix[i],(unsigned int) port,timeoutconnect) == 0) { 
         tcpto_err(&ip.ix[i],0);
         partner = ip.ix[i];
         if (qmtpsend) 
@@ -1353,7 +1358,7 @@ int main(int argc,char **argv)
         else  
           smtp(); /* read qmail/THOUGHTS; section 6 */
       }
-      tcpto_err(&ip.ix[i],errno == error_timeout || errno == error_connrefused);
+      tcpto_err(&ip.ix[i],errno == ETIMEDOUT || errno == ECONNREFUSED);
       close(smtpfd);
     }
   }

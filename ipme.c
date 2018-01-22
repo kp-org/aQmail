@@ -1,3 +1,7 @@
+/*
+ *  Revision 20171214, Erwin Hoffmann
+ *  - changed stralloc ip/ip6 to char ip4[4]/ip6[16]
+ */
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/time.h>
@@ -17,13 +21,13 @@
 #include "ipme.h"
 
 /** @file ipme.c
-    @brief ipme_is4, ipme_is6, ipme_is46, ipme_init
+    @brief ipme_is4, ipme_is6, ipme_is, ipme_init
  */
 
 static int ipmeok = 0;
 ipalloc ipme = {0};
 
-int ipme_is4(struct ip_address *ip)
+int ipme_is4(char *ip[4])
 {
   int i;
 
@@ -35,7 +39,7 @@ int ipme_is4(struct ip_address *ip)
   return 0;
 }
 
-int ipme_is6(struct ip6_address *ip)
+int ipme_is6(char *ip[16])
 {
   int i;
 
@@ -47,10 +51,10 @@ int ipme_is6(struct ip6_address *ip)
   return 0;
 }
 
-int ipme_is46(struct ip_mx *mxip)
+int ipme_is(struct ip_mx *mxip)
 {
   switch (mxip->af) {
-    case AF_INET:  return ipme_is4(&mxip->addr.ip);
+    case AF_INET:  return ipme_is4(&mxip->addr.ip4);
     case AF_INET6: return ipme_is6(&mxip->addr.ip6);
   }
   return 0;
@@ -76,7 +80,7 @@ int ipme_init()
     if (ifa->ifa_addr) {
       if (ifa->ifa_addr->sa_family == AF_INET) {
         sin = (struct sockaddr_in *) ifa->ifa_addr;
-        byte_copy(&ix.addr.ip,4,&sin->sin_addr);
+        byte_copy(&ix.addr.ip4,4,&sin->sin_addr);
         ix.af = AF_INET;
         if (!ipalloc_append(&ipme,&ix)) return 0; 
       }

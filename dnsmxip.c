@@ -26,7 +26,6 @@ int main(int argc,char **argv)
   if (!stralloc_copys(&sa,argv[1]))
     { substdio_putsflush(subfderr,"out of memory\n"); _exit(111); }
 
-
   r = now() + getpid();
   dns_init(0);
   dnsdoe(dns_mxip(&ia,&sa,r));
@@ -34,7 +33,7 @@ int main(int argc,char **argv)
   for (j = 0; j < ia.len; ++j) {
     switch(ia.ix[j].af) {
       case AF_INET:
-        substdio_put(subfdout,ipaddr,ip4_fmt(ipaddr,&ia.ix[j].addr.ip));
+        substdio_put(subfdout,ipaddr,ip4_fmt(ipaddr,&ia.ix[j].addr.ip4));
         break;
       case AF_INET6:
         substdio_put(subfdout,ipaddr,ip6_fmt(ipaddr,&ia.ix[j].addr.ip6));

@@ -21,7 +21,7 @@ int main(int argc,char **argv)
    { substdio_putsflush(subfderr,"out of memory\n"); _exit(111); }
 
  dns_init(0);
- dnsdoe(dns_txt(&ssa,&sa));
+ dnsdoe(dns_txts(&ssa,&sa));
 
  for (j = 0; j < ssa.len; ++j) {
    substdio_put(subfdout,ssa.sa[j].s,ssa.sa[j].len);

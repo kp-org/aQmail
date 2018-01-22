@@ -1,7 +1,7 @@
-#include <netdb.h>
 #include <string.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <arpa/nameser.h>
 #include <sys/socket.h>
 #include <resolv.h>
@@ -18,16 +18,17 @@
 
 /**
  @file dns.c
- @brief DNS functions: resolve, findname, findip, findip6, findmx, findtxt 
-        DNS helpers: dns_init, dns_cname, iaafmt, dns_ptr, iaafmt6, 
-                     dns_ptr6, dns_ipplus, dns_ip (IPv4+IPv6), dns_mxip
+ @brief DNS functions: resolve, findname, findip4, findip6, findmx, findtxt 
+        DNS helpers: dns_init, dns_cname, iaafmt4, dns_ptr4, dns_ptr6,
+                     dns_ptr4plus, dns_ptr6plus, iaafmt4, iaafmt6, 
+                     dns_ipplus, dns_ip (IPv4+IPv6), dns_mxip
  */
 
 /**
  @brief Includes Christopher K. Davis oversize DNS packet patch
         Includes Jonathan de Boyne Pollard CNAME query patch 
         Additional IPv6 support by fefe and fujiwara 
-        Added dns_txt support and multiple field response for TXT from Jana Saout
+        Added dns_txts support and multiple field response for TXT from Jana Saout
  */
 
 extern int res_query();
@@ -38,6 +39,11 @@ extern int h_errno;
 static unsigned short getshort(c) unsigned char *c;
 { unsigned short u; u = c[0]; return (u << 8) + c[1]; }
 
+/* PACKETSZ can be found in /usr/include 
+   ./arpa/nameser_compat.h and ./arpa/nameser.h (512 byte)
+   MTUSIZE from qlibs (1028 byte) */
+
+// static union { HEADER hdr; unsigned char buf[PACKETSZ]; } response;
 static struct { unsigned char *buf; } response;
 static int responsebuflen = 0;
 static int responselen;
@@ -47,8 +53,8 @@ static u_long saveresoptions;
 
 static int numanswers;
 static char name[MAXDNAME];
-static struct ip_address ip;
-static struct ip6_address ip6;
+char ip4[4];
+char ip6[16];
 unsigned short pref;
 
 static stralloc glue = {0};
@@ -65,8 +71,8 @@ static int resolve(stralloc *domain,int type)
   if (!stralloc_copy(&glue,domain)) return DNS_MEM;
   if (!stralloc_0(&glue)) return DNS_MEM;
   if (!responsebuflen)
-   if (response.buf = (unsigned char *)alloc(PACKETSZ+1))
-    responsebuflen = PACKETSZ+1;
+   if (response.buf = (unsigned char *)alloc(MTUSIZE+1))
+    responsebuflen = MTUSIZE+1;
    else return DNS_MEM;
 
   responselen = lookup(glue.s,C_IN,type,response.buf,responsebuflen);
@@ -134,7 +140,7 @@ static int findname(int wanttype)
   return 0;
 }
 
-static int findip(int wanttype)
+static int findip4(int wanttype)
 {
   unsigned short rrtype;
   unsigned short rrdlen;
@@ -158,10 +164,7 @@ static int findip(int wanttype)
   if (rrtype == wanttype) {
     if (rrdlen < 4)
       return DNS_SOFT;
-    ip.d[0] = responsepos[0];
-    ip.d[1] = responsepos[1];
-    ip.d[2] = responsepos[2];
-    ip.d[3] = responsepos[3];
+    byte_copy(&ip4,4,&responsepos[0]);
     responsepos += rrdlen;
     return 1;
   }
@@ -194,7 +197,7 @@ static int findip6(int wanttype)
   if (rrtype == wanttype) {
     if (rrdlen < 16)
       return DNS_SOFT;
-    bcopy(&responsepos[0],&ip6.d,16);
+    byte_copy(&ip6,16,&responsepos[0]);
     responsepos += rrdlen;
     return 1;
   }
@@ -316,30 +319,29 @@ int dns_cname(stralloc *sa)
 
 #define FMT_IAA 40
 
-static int iaafmt(char *s,struct ip_address *ip)
+int iaafmt4(char *s,char ip[4])
 {
   unsigned int i;
   unsigned int len;
   len = 0;
-  i = fmt_ulong(s,(unsigned long) ip->d[3]); len += i; if (s) s += i;
+  i = fmt_ulong(s,(unsigned long) ip[3]); len += i; if (s) s += i;
   i = fmt_str(s,"."); len += i; if (s) s += i;
-  i = fmt_ulong(s,(unsigned long) ip->d[2]); len += i; if (s) s += i;
+  i = fmt_ulong(s,(unsigned long) ip[2]); len += i; if (s) s += i;
   i = fmt_str(s,"."); len += i; if (s) s += i;
-  i = fmt_ulong(s,(unsigned long) ip->d[1]); len += i; if (s) s += i;
+  i = fmt_ulong(s,(unsigned long) ip[1]); len += i; if (s) s += i;
   i = fmt_str(s,"."); len += i; if (s) s += i;
-  i = fmt_ulong(s,(unsigned long) ip->d[0]); len += i; if (s) s += i;
+  i = fmt_ulong(s,(unsigned long) ip[0]); len += i; if (s) s += i;
   i = fmt_str(s,".in-addr.arpa."); len += i; if (s) s += i;
   return len;
 }
 
-
-static int dns_ptrplus(strsalloc *ssa,struct ip_address *ip)
+static int dns_ptr4plus(strsalloc *ssa,char ip[4])
 {
   stralloc sa = {0};
   int r;
 
-  if (!stralloc_ready(&sa,iaafmt((char *) 0,ip))) return DNS_MEM;
-  sa.len = iaafmt(sa.s,ip);
+  if (!stralloc_ready(&sa,iaafmt4((char *) 0,ip))) return DNS_MEM;
+  sa.len = iaafmt4(sa.s,ip);
 
   r = resolve(&sa,T_PTR);
   alloc_free(sa.s);
@@ -363,7 +365,7 @@ static int dns_ptrplus(strsalloc *ssa,struct ip_address *ip)
   return DNS_HARD;
 }
 
-int dns_ptr(strsalloc *ssa,struct ip_address *ip)
+int dns_ptr4(strsalloc *ssa,char ip[4])
 {
   int r;
   int j;
@@ -371,7 +373,7 @@ int dns_ptr(strsalloc *ssa,struct ip_address *ip)
   if (!strsalloc_readyplus(ssa,0)) return DNS_MEM;
   ssa->len = 0;
 
-  r = dns_ptrplus(ssa,ip);
+  r = dns_ptr4plus(ssa,ip);
   if (r < 0) {
     for (j = 0; j < ssa->len; ++j)
       alloc_free(ssa->sa[j].s);
@@ -382,10 +384,8 @@ int dns_ptr(strsalloc *ssa,struct ip_address *ip)
   return r;
 }
 
-
-static int iaafmt6(char *s,struct ip6_address *ip)
+int iaafmt6(char *s,char ip[16])
 {
-  unsigned int i;
   int j;
   unsigned int len;
   static char data[] = "0123456789abcdef";
@@ -393,9 +393,9 @@ static int iaafmt6(char *s,struct ip6_address *ip)
 
   if (s) {
     for (j = 15; j >= 0; j--) {
-      *s++ = data[ip->d[j] & 0x0f];
+      *s++ = data[ip[j] & 0x0f];
       *s++ = '.';
-      *s++ = data[(ip->d[j] >> 4) & 0x0f];
+      *s++ = data[(ip[j] >> 4) & 0x0f];
       *s++ = '.';
     }
     strcpy(s,"ip6.arpa");
@@ -404,7 +404,7 @@ static int iaafmt6(char *s,struct ip6_address *ip)
 /* 1.2.3.4.5.6.7.8.9.a.b.c.d.e.f.1.2.3.4.5.6.7.8.9.a.b.c.d.e.f.ip6.arpa */
 }
 
-static int dns_ptr6plus(strsalloc *ssa,struct ip6_address *ip)
+static int dns_ptr6plus(strsalloc *ssa,char ip[16])
 {
   stralloc sa = {0};
   int r;
@@ -434,7 +434,7 @@ static int dns_ptr6plus(strsalloc *ssa,struct ip6_address *ip)
   return DNS_HARD;
 }
 
-int dns_ptr6(strsalloc *ssa,struct ip6_address *ip)
+int dns_ptr6(strsalloc *ssa,char ip[16])
 {
   int r;
   int j;
@@ -457,15 +457,17 @@ static int dns_ipplus(ipalloc *ia,stralloc *sa,int pref)
 {
   int r;
   struct ip_mx ix;
-  int err4 = 0, err6 = 0;
+  int err4 = 0;
+  int err6 = 0;
 
   if (!stralloc_copy(&glue,sa)) return DNS_MEM;
   if (!stralloc_0(&glue)) return DNS_MEM;
+
   if (glue.s[0]) {
     ix.pref = 0;
     ix.af = AF_INET;
-    if (!glue.s[ip4_scan(&ix.addr.ip,glue.s)] || 
-        !glue.s[ip4_scanbracket(&ix.addr.ip,glue.s)]) {
+    if (!glue.s[ip4_scan(&ix.addr.ip4,glue.s)] ||
+        !glue.s[ip4_scanbracket(&ix.addr.ip4,glue.s)]) {
       if (!ipalloc_append(ia,&ix)) return DNS_MEM;
       return 0;
     }
@@ -478,14 +480,13 @@ static int dns_ipplus(ipalloc *ia,stralloc *sa,int pref)
     default:
       while ((r = findip6(T_AAAA)) != 2) {
         ix.af = AF_INET6;
-        ix.addr.ip6 = ip6;
+        byte_copy(&ix.addr.ip6,16,&ip6);
         ix.pref = pref;
 	if (r == DNS_SOFT) { err6 = DNS_SOFT; break; }
 	if (r == 1)
 	  if (!ipalloc_append(ia,&ix)) { err6 = DNS_MEM; break; }
       }
       break;
-
   }
 
   switch (resolve(sa,T_A)) {
@@ -493,9 +494,9 @@ static int dns_ipplus(ipalloc *ia,stralloc *sa,int pref)
     case DNS_SOFT: err4 = DNS_SOFT; break;
     case DNS_HARD: err4 = DNS_HARD; break;
     default:
-      while ((r = findip(T_A)) != 2) {
+      while ((r = findip4(T_A)) != 2) {
         ix.af = AF_INET;
-        ix.addr.ip = ip;
+        byte_copy(&ix.addr.ip4,4,&ip4);
         ix.pref = pref;
         if (r == DNS_SOFT) { err4 = DNS_SOFT; break; }
         if (r == 1)
@@ -535,7 +536,8 @@ int dns_mxip(ipalloc *ia,stralloc *sa,unsigned long random) {
   if (!stralloc_0(&glue)) return DNS_MEM;
   if (glue.s[0]) {
     ix.pref = 0;
-    if (!glue.s[ip4_scan(&ix.addr.ip,glue.s)] || !glue.s[ip4_scanbracket(&ix.addr.ip,glue.s)]) {
+    if (!glue.s[ip4_scan(&ix.addr.ip4,glue.s)] ||
+        !glue.s[ip4_scanbracket(&ix.addr.ip4,glue.s)]) {
       ix.af = AF_INET;
       if (!ipalloc_append(ia,&ix)) return DNS_MEM;
       return 0;
@@ -599,7 +601,7 @@ int dns_mxip(ipalloc *ia,stralloc *sa,unsigned long random) {
   return flagsoft;
 }
 
-static int dns_txtplus(strsalloc *ssa,stralloc *sa)
+static int dns_txtsplus(strsalloc *ssa,const stralloc *sa)
 {
   int r;
 
@@ -622,7 +624,7 @@ static int dns_txtplus(strsalloc *ssa,stralloc *sa)
   return DNS_HARD;
 }
 
-int dns_txt(strsalloc *ssa,stralloc *sa)
+int dns_txts(strsalloc *ssa,const stralloc *sa)
 {
   int r;
   int j;
@@ -630,7 +632,7 @@ int dns_txt(strsalloc *ssa,stralloc *sa)
   if (!strsalloc_readyplus(ssa,0)) return DNS_MEM;
   ssa->len = 0;
  
-  r = dns_txtplus(ssa,sa);
+  r = dns_txtsplus(ssa,sa);
   if (r < 0) {
     for (j = 0; j < ssa->len; ++j)
       alloc_free(ssa->sa[j].s);

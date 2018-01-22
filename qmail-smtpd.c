@@ -1,6 +1,8 @@
 /*
  *  Revision 20170926, Kai Peter
  *  - changed 'control' directory name to 'etc'
+ *  Revision 20171214, Erwin Hoffmann
+ *  - changed struct ip/ip6 to char ip4[4]/ip[16]
 */
 #include "readwrite.h"
 #include "stralloc.h"
@@ -85,7 +87,7 @@ int saferead(int fd,char *buf,int len)
   int r;
   flush();
   r = timeoutread(timeout,fd,buf,len);
-  if (r == -1) if (errno == error_timeout) die_alarm();
+  if (r == -1) if (errno == ETIMEDOUT) die_alarm();
   if (r <= 0) die_read();
   return r;
 }
@@ -498,8 +500,8 @@ int addrparse(char *arg)
   int i;
   char ch;
   char terminator;
-  struct ip_address ip;
-  struct ip6_address ip6;
+  char ip4[4];
+  char ip6[16];
   int flagesc;
   int flagquoted;
 
@@ -538,15 +540,15 @@ int addrparse(char *arg)
     if (i < addr.len) /* if not, partner should go read rfc 821 */
       if (addr.s[i + 1] == '[') {
         if (byte_rchr(addr.s + i + 2,addr.len - i - 2,':')) {  /* @[IPv6::] */
-          if (!addr.s[i + 1 + ip6_scanbracket(&ip6,addr.s + i + 1)])
+          if (!addr.s[i + 1 + ip6_scanbracket(ip6,addr.s + i + 1)])
              if (ipme_is6(&ip6)) {
                addr.len = i + 1;
                if (!stralloc_cat(&addr,&liphost)) die_nomem();
                if (!stralloc_0(&addr)) die_nomem();
              }
         } else {  /* @[IPv4] */
-          if (!addr.s[i + 1 + ip4_scanbracket(&ip,addr.s + i + 1)])
-            if (ipme_is4(&ip)) {
+          if (!addr.s[i + 1 + ip4_scanbracket(ip4,addr.s + i + 1)])
+            if (ipme_is4(&ip4)) {
               addr.len = i + 1;
               if (!stralloc_cat(&addr,&liphost)) die_nomem();
               if (!stralloc_0(&addr)) die_nomem();
