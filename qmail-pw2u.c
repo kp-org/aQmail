@@ -142,7 +142,7 @@ void doaccount()
       return;
   if (homestrategy) {
     if (stat(home.s,&st) == -1) {
-      if (errno != error_noent) die_home(home.s);
+      if (errno != ENOENT) die_home(home.s);
       if (homestrategy == 1) die_home(home.s);
       return;
     }
@@ -288,7 +288,7 @@ int main(int argc,char **argv)
 
   fd = open_read("var/users/subusers");
   if (fd == -1) {
-    if (errno != error_noent) die_control();
+    if (errno != ENOENT) die_control();
   }
   else {
     substdio_fdbuf(&ss,read,fd,ssbuf,sizeof(ssbuf));
@@ -306,7 +306,7 @@ int main(int argc,char **argv)
 
   fd = open_read("var/users/append");
   if (fd == -1) {
-    if (errno != error_noent) die_control();
+    if (errno != ENOENT) die_control();
   }
   else {
     substdio_fdbuf(&ss,read,fd,ssbuf,sizeof(ssbuf));

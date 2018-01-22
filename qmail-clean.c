@@ -85,7 +85,7 @@ int main()
       if (!scan_ulong(line.s + i + 1,&id)) { respond("x"); continue; }
     if (byte_equal(line.s,5,"foop/")) {
 #define U(prefix,flag) fmtqfn(fnbuf,prefix,id,flag); \
-      if (unlink(fnbuf) == -1) if (errno != error_noent) { respond("!"); continue; }
+      if (unlink(fnbuf) == -1) if (errno != ENOENT) { respond("!"); continue; }
       U("intd/",1)
       U("mess/",1)
       respond("+");

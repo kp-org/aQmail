@@ -17,7 +17,7 @@
 #include "byte.h"
 #include "case.h"
 
-#define FATAL "qmail-mfrules: fatal: "
+#define MFFATAL "qmail-mfrules: fatal: "
 
 stralloc address = {0};
 stralloc data = {0};
@@ -36,20 +36,20 @@ struct cdb_make c;
 
 void die_nomem()
 {
-  strerr_die2x(112,FATAL,"out of memory");
+  strerr_die2x(112,MFFATAL,"out of memory");
 }
 void die_parse()
 {
   if (!stralloc_0(&line)) die_nomem();
-  strerr_die3x(100,FATAL,"unable to parse this line: ",line.s);
+  strerr_die3x(100,MFFATAL,"unable to parse this line: ",line.s);
 }
 void die_read()
 {
-  strerr_die2sys(111,FATAL,"unable to read etc/mailfromrules: ");
+  strerr_die2sys(111,MFFATAL,"unable to read etc/mailfromrules: ");
 }
 void die_write()
 {
-  strerr_die2sys(111,FATAL,"unable to write to etc/mailfromrules.tmp: ");
+  strerr_die2sys(111,MFFATAL,"unable to write to etc/mailfromrules.tmp: ");
 }
 
 char strnum[FMT_ULONG];
@@ -116,7 +116,7 @@ int main()
 
   umask(033);
   if (chdir(auto_qmail) == -1)
-    strerr_die4sys(111,FATAL,"unable to chdir to ",auto_qmail,": ");
+    strerr_die4sys(111,MFFATAL,"unable to chdir to ",auto_qmail,": ");
 
   fd = open_read("etc/mailfromrules");
   if (fd == -1) die_read();
@@ -175,7 +175,7 @@ int main()
   if (fsync(fdtemp) == -1) die_write();
   if (close(fdtemp) == -1) die_write(); /* NFS stupidity */
   if (rename("etc/mailfromrules.tmp","etc/mailfromrules.cdb") == -1)
-    strerr_die2sys(111,FATAL,"unable to move etc/mailfromrules.tmp to etc/mailfromrules.cdb");
+    strerr_die2sys(111,MFFATAL,"unable to move etc/mailfromrules.tmp to etc/mailfromrules.cdb");
 
   _exit(0);
 }

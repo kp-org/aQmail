@@ -28,7 +28,7 @@ int rcpthosts_init()
   if (flagrh != 1) return flagrh;
   if (!constmap_init(&maprh,rh.s,rh.len,0)) return flagrh = -1;
   fdmrh = open_read("etc/morercpthosts.cdb");
-  if (fdmrh == -1) if (errno != error_noent) return flagmrh = -1;
+  if (fdmrh == -1) if (errno != ENOENT) return flagmrh = -1;
   if (fdmrh > 0) flagmrh = 1;
   return 0;
 }
@@ -56,7 +56,7 @@ int rcpthosts(char *buf, int len)
 
   if (flagmrh == 1) {
     fdmrh = open_read("etc/morercpthosts.cdb");
-    if (fdmrh == -1) if (errno == error_noent) return 0;
+    if (fdmrh == -1) if (errno == ENOENT) return 0;
 //    uint32 dlen;
     int r;
 

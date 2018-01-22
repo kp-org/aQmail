@@ -142,7 +142,7 @@ int main()
       for (channel = 0;channel < 2;++channel) {
         fd = open_read(channel ? fnremote : fnlocal);
         if (fd == -1) {
-	  if (errno != error_noent)
+	  if (errno != ENOENT)
 	    err(id);
         } else {
           for (;;) {

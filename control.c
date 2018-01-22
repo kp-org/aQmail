@@ -58,7 +58,7 @@ int control_readline(stralloc *sa,char *fn)
   int match;
 
   fd = open_read(fn);
-  if (fd == -1) { if (errno == error_noent) return 0; return -1; }
+  if (fd == -1) { if (errno == ENOENT) return 0; return -1; }
  
 //  substdio_fdbuf(&ss,read,fd,inbuf,sizeof(inbuf));
   buffer_init(&bin,read,fd,inbuf,sizeof(inbuf));
@@ -97,7 +97,7 @@ int control_readfile(stralloc *sa,char *fn,int flagme)
 
   fd = open_read(fn);
   if (fd == -1) {
-    if (errno == error_noent) {
+    if (errno == ENOENT) {
       if (flagme && meok) {
         if (!stralloc_copy(sa,&me)) return -1;
         if (!stralloc_0(sa)) return -1;

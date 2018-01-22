@@ -76,7 +76,7 @@ void die_qqt() {
 void die_chdir() {
  substdio_putsflush(subfderr,"qmail-inject: fatal: internal bug\n"); temp(); }
 void die_read() {
- if (errno == error_nomem) die_nomem();
+ if (errno == ENOMEM) die_nomem();
  substdio_putsflush(subfderr,"qmail-inject: fatal: read error\n"); temp(); }
 void doordie(stralloc *sa,int r) 
 {

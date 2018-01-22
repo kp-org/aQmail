@@ -95,7 +95,7 @@ void nughde_get(char *local)
 
   fd = open_read("var/users/cdb");
   if (fd == -1)
-    if (errno != error_noent)
+    if (errno != ENOENT)
       _exit(QLX_CDB);
 
   if (fd != -1) {

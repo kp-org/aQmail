@@ -84,7 +84,7 @@ int main(int argc,char **argv)
   for (;;) {						/* read input */
     do
       r = read(FDAUTH,inputbuf + buflen,sizeof(inputbuf) - buflen);
-    while ((r == -1) && (errno == error_intr));
+    while ((r == -1) && (errno == EINTR));
     if (r == -1) pam_exit(111);
     if (r == 0) break;
     buflen += r;

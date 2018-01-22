@@ -123,7 +123,7 @@ void maildir_child(char *dir)
     *s++ = 'P'; s += fmt_ulong(s,pid); *s++ = '.';
     s += fmt_strn(s,hostname.s,hostname.len); *s++ = 0;
 
-    if (stat(fntmptph,&st) == -1) if (errno == error_noent) break;
+    if (stat(fntmptph,&st) == -1) if (errno == ENOENT) break;
     /* really should never get to this point */
     if (loop == 2) _exit(1);
     sleep(2);
@@ -380,8 +380,8 @@ int qmeexists(int *fd,int *cutable)
   *fd = open_read(qme.s);
   if (*fd == -1) {
     if (error_temp(errno)) temp_qmail(qme.s);
-    if (errno == error_perm) temp_qmail(qme.s);
-    if (errno == error_acces) temp_qmail(qme.s);
+    if (errno == EPERM) temp_qmail(qme.s);
+    if (errno == EACCES) temp_qmail(qme.s);
     return 0;
   }
 

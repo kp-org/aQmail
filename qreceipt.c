@@ -30,7 +30,7 @@ void die_usage() {
  substdio_putsflush(subfderr,
  "qreceipt: usage: qreceipt deliveryaddress\n"); die(); }
 void die_read() {
- if (errno == error_nomem) die_nomem();
+ if (errno == ENOMEM) die_nomem();
  substdio_putsflush(subfderr,"qreceipt: fatal: read error\n"); die_temp(); }
 void doordie(sa,r) stralloc *sa; int r; {
  if (r == 1) return; if (r == -1) die_nomem();
