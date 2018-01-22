@@ -16,6 +16,8 @@
 #define SPF_ERROR   -8
 #define SPF_NOMEM   -9
 #define SPF_SYNTAX  -10  /* Setup problem */
+#define SPF_PREFIX  -11  /* Setup problem */
+#define SPF_EXISTS  -99 /* go on */
 
 /* (External) Resulting codes */
 
@@ -88,13 +90,13 @@ const static unsigned char urlchr_table[256] =
 
 /* spfdnsip.c */
 
-int match_ip4(struct ip_address *,int,struct ip_address *);
-int match_ip6(struct ip6_address *,int,struct ip6_address *);
+int match_ip4(char *,int,char *);
+int match_ip6(char *,int,char *);
 int get_prefix(char *);
 int spf_records(stralloc *,stralloc *);
 int spf_include(char *,char *);
-int spf_a(char*,char *);
-int spf_mx(char*,char *);
+int spf_a(char *,char *);
+int spf_mx(char *,char *);
 int spf_ptr(char *,char *);
 int spf_ip4(char *,char *);
 int spf_ip6(char *,char *);

@@ -13,14 +13,15 @@ void die(int e,char *s) { substdio_putsflush(subfderr,s); _exit(e); }
 void die_usage() { die(100,"fatal: invalid usage\nusage: spfquery <sender-ip> <sender-helo/ehlo> <envelope-from> [<local rules>] [-v(erbose) ] \n"); }
 void die_nomem() { die(111,"fatal: out of memory\n"); }
 
-/* stralloc spfinfo;
-stralloc spfmf;
-stralloc spfhelo;
-stralloc spfdomain;
-stralloc spfrecord;
-stralloc spfexplain;
-stralloc expdomain;
-stralloc spfexpmsg; */
+/* extern stralloc spfinfo;
+extern stralloc spfmf;
+extern stralloc spfhelo;
+extern stralloc spfdomain;
+extern stralloc spfrecord;
+extern stralloc spfexplain; 
+extern stralloc expdomain;
+extern stralloc spfexpmsg; */
+
 static stralloc heloin = {0};
 static stralloc mfin = {0};
 static stralloc spflocal = {0};
@@ -29,19 +30,19 @@ static stralloc spfbounce = {0};
 int main(int argc,char **argv)
 {
   stralloc spfip = {0};
-  char *local;
   int flag = 0;
   int r;
   int verbose = 0;
 
   if (argc < 4) die_usage();
+  if (argc > 1 && byte_equal(argv[1],2,"-v")) die_usage();
+  if (argc > 2 && byte_equal(argv[2],2,"-v")) die_usage();
+  if (argc > 3 && byte_equal(argv[3],2,"-v")) die_usage();
 
   if (!stralloc_copys(&spfip,argv[1])) die_nomem();
   if (!stralloc_0(&spfip)) die_nomem();
   r = byte_chr(spfip.s,spfip.len,':');
   if (r < spfip.len) flag = 1;
-
-  local = "localhost";
 
   if (!stralloc_copys(&heloin,argv[2])) die_nomem();
   if (!stralloc_0(&heloin)) die_nomem();
@@ -97,7 +98,7 @@ int main(int argc,char **argv)
   if (r == SPF_FAIL) {
     substdio_puts(subfdout,"SPF results returned: ");
     if (!spf_parse(&spfbounce,spfexpmsg.s,expdomain.s)) die_nomem();
-    substdio_put(subfdout,spfbounce,spfbounce.len);
+    substdio_put(subfdout,spfbounce.s,spfbounce.len);
     substdio_putsflush(subfdout,"\n"); 
   }
 

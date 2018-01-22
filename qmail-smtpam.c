@@ -1,6 +1,8 @@
 /*
  *  Revision 20170926, Kai Peter
  *  - changed 'control' directory name to 'etc'
+ *  Revision 20171214, Erwin Hoffmann
+ *  - changed struct domainip4/domainip6 to char domainip4[4]/domainip[16]
 */
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -29,7 +31,7 @@
 #include "constmap.h"
 #include "tcpto.h"
 #include "readwrite.h"
-#include "socket6_if.h"
+#include "socket_if.h"
 #include "ucspitls.h"
 #include "timeoutconn.h"
 #include "timeoutread.h"
@@ -71,14 +73,17 @@ stralloc recipient = {0};
 
 stralloc domainips = {0};
 struct constmap mapdomainips;
-struct ip_address domainip4;
-struct ip6_address domainip6;
+//struct ip_address domainip4;
+//struct ip6_address domainip6;
 unsigned long scope_id;
 
 stralloc routes = {0};
 struct constmap maproutes;
 
 struct ip_mx partner;
+
+char domainip4[4];
+char domainip6[16];
 
 SSL *ssl;
 SSL_CTX *ctx;
@@ -173,9 +178,9 @@ void outhost()
 
   switch(partner.af) {
     case AF_INET:
-      len = ip4_fmt(ipaddr,&partner.addr); break;
+      len = ip4_fmt(ipaddr,&partner.addr.ip4); break;
     case AF_INET6:
-      len = ip6_fmt(ipaddr,&partner.addr); break;
+      len = ip6_fmt(ipaddr,&partner.addr.ip6); break;
   }
   if (substdio_put(subfdoutsmall,ipaddr,len) == -1) _exit(0);
 }
@@ -622,7 +627,7 @@ int main(int argc,char **argv)
 
   prefme = 100000;
   for (i = 0; i < ip.len; ++i)
-    if (ipme_is46(&ip.ix[i]))
+    if (ipme_is(&ip.ix[i]))
       if (ip.ix[i].pref < prefme)
         prefme = ip.ix[i].pref;
 
@@ -663,12 +668,12 @@ int main(int argc,char **argv)
      }
    }
 
-  if (timeoutconn46(smtpfd,&ip.ix[i],(unsigned int) port,timeoutconnect) == 0) { 
+  if (timeoutconn(smtpfd,&ip.ix[i],(unsigned int) port,timeoutconnect) == 0) { 
     tcpto_err(&ip.ix[i],0);
     partner = ip.ix[i];
     smtp(); /* does not return */
   }
-  tcpto_err(&ip.ix[i],errno == error_timeout);
+  tcpto_err(&ip.ix[i],errno == ETIMEDOUT);
   close(smtpfd);
   
   temp_noconn();

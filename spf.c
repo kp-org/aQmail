@@ -34,9 +34,12 @@ stralloc spfexpmsg = {0};		 /* additional explanation given as 5xx SMTP response
 stralloc expdomain = {0};		 /* the domain, for which explanation is given */
 
 static int recursion;
-struct ip_address ip4remote;
-struct ip6_address ip6remote; 
+// struct ip4_address ip4remote;
+// struct ip6_address ip6remote; 
 int flagip6;
+char ip4remote[4];
+char ip6remote[16];
+// char *prefix = 0;
 
 /* Sample SPF TXT records:
 Standard example:   example.net TXT "v=spf1 mx a:pluto.example.net include:aspmx.googlemail.com -all"
@@ -99,7 +102,7 @@ int spf_query(char *remoteip,char *helo,char *mf,char *local,int flagip)
 
   if (local) {
     if (!stralloc_copys(&spflocal,local)) return SPF_NOMEM; 
-    if (!stralloc_0(&spfmf)) return SPF_NOMEM;
+    if (!stralloc_0(&spflocal)) return SPF_NOMEM;
   } else
     if (!stralloc_copys(&spflocal,"localhost")) return SPF_NOMEM; 
 
@@ -199,7 +202,7 @@ REDIRECT:
 
     expdomain.len = 0;
     
-  } else if (r == SPF_OK) {		/* SPF records published */
+  } else if (r == SPF_EXISTS) {		/* SPF records published */
     if (!stralloc_0(&spfdata)) return SPF_NOMEM;
     r = SPF_NEUTRAL;
 
@@ -283,10 +286,9 @@ REDIRECT:
         strsalloc ssa = {0};
 
         if (!first) continue;
-
         if (!stralloc_copys(&sa,p)) return SPF_NOMEM;
 
-        switch (dns_txt(&ssa,&sa)) {
+        switch (dns_txts(&ssa,&sa)) {
           case DNS_MEM:  return SPF_NOMEM;
           case DNS_SOFT: continue; /* FIXME... */
           case DNS_HARD: continue;
@@ -399,13 +401,15 @@ int spf_mechanism(char *mechanism,char *spfspec,char *prefix,char *domain)
 
   if (mech->use_spfspec && !spfspec && mech->filldomain) spfspec = domain;
   if (!mech->use_spfspec != !spfspec) return SPF_SYNTAX;
-  if (!mech->use_prefix && prefix) return SPF_SYNTAX;
+  if (!mech->use_prefix && prefix) return SPF_PREFIX;
 
   if (!mech->func) return mech->defresult;
   if (!stralloc_readyplus(&sa,1)) return SPF_NOMEM;
 
   if (mech->expands && str_diff(spfspec,domain)) {
+
     if (!spf_parse(&sa,spfspec,domain)) return SPF_NOMEM;
+
     for (pos = 0; (sa.len - pos) > 255;) {
       pos += byte_chr(sa.s + pos,sa.len - pos,'.');
       if (pos < sa.len) pos++;
@@ -415,7 +419,6 @@ int spf_mechanism(char *mechanism,char *spfspec,char *prefix,char *domain)
     if (!stralloc_0(&sa)) return SPF_NOMEM;
     spfspec = sa.s;
   }
-
 
   r = mech->func(spfspec,prefix);
   return r;
@@ -432,7 +435,6 @@ int spf_include(char *spfspec,char *prefix)
 {
   stralloc sa = {0};
   int r;
-
 
   if (!stralloc_copys(&sa,spfspec)) return SPF_NOMEM;
   if (!stralloc_0(&sa)) return SPF_NOMEM;
@@ -454,7 +456,7 @@ int spf_include(char *spfspec,char *prefix)
  @brief  spf_parse
          parses the substructure of the SPF record and calls spf_macros
  @param  input:  pointer to SPF specification, pointer to domain
-         output: stralloc sa -- 
+         output: stralloc sa 
  @output pointer to spfspec: with found data
  @return int r = 1 ok; 0 failure
  */
@@ -467,7 +469,7 @@ int spf_parse(stralloc *sa,char *spfspec,char *domain)
 
   if (!stralloc_readyplus(sa,3)) return 0;
   sa->len = 0;
-
+ 
   for (p = spfspec; *p; ++p) {
     append = *p;
     if (byte_equal(p,1,"%")) {
@@ -486,6 +488,7 @@ int spf_parse(stralloc *sa,char *spfspec,char *domain)
         default: p--;
       }
     }
+    if (!stralloc_readyplus(sa,1)) return 0;
     if (!stralloc_append(sa,&append)) return 0;
   }
 
@@ -512,7 +515,7 @@ int spf_macros(stralloc *expand,char *macro,char *domain)
   char ascii;
   int pos, i, n; 
   int start = expand->len; 
- 
+
   /* URL encoding - hidden in RFC 7208 Sec. 7.3 */
 
   if (*macro == 'x') { urlencode = -1; ++macro; } else urlencode = 0;
@@ -552,14 +555,15 @@ int spf_macros(stralloc *expand,char *macro,char *domain)
       if (!stralloc_copys(&sa,spfmf.s + i)) return 0;
       break;
     case 'd': case 'D':
+      if (!stralloc_readyplus(&sa,str_len(domain))) return 0;
       if (!stralloc_copys(&sa,domain)) return 0;
       break;
     case 'i': case 'c': case 'I': case 'C':
       if (!stralloc_ready(&sa,IPFMT)) return 0;
       if (flagip6) {
-        sa.len = ip6_fmt(sa.s,&ip6remote);
+        sa.len = ip6_fmt(sa.s,ip6remote);
       } else {
-        sa.len = ip4_fmt(sa.s,&ip4remote);
+        sa.len = ip4_fmt(sa.s,ip4remote);
       }
       break;
     case 'p': case 'P':
@@ -585,7 +589,8 @@ int spf_macros(stralloc *expand,char *macro,char *domain)
       }
       break;
     case 'r': case 'R':
-      if (!stralloc_copy(&sa,&spflocal)) return 0; 
+      if (!stralloc_readyplus(&sa,spflocal.len)) return 0;
+      if (!stralloc_copys(&sa,spflocal.s)) return 0; 
       break;
     default: break;
   }
