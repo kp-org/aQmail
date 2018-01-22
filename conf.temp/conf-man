@@ -1,5 +1,0 @@
-/usr/local/man
-
-Here, the location of the s/qmail man pages can be specified.
-Typical directories -- /usr/local/man, /usr/share/man -- are
-considered automatically; except for OpenBSD.

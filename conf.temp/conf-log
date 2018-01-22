@@ -1,6 +1,0 @@
-/var/log
-
-This is the s/qmail high-level log dir. 
-Running package/service will generate automatically the 
-required individual log dirs named after the service, 
-ie. qmail-send, qmail-smtpd .... etc. 

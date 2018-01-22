@@ -1,8 +1,0 @@
-#!/bin/sh
-HOSTNAME=`hostname`
-export UCSPITLS=""
-. /var/qmail/ssl/ssl.env
-exec env PATH="/var/qmail/bin:$PATH" \
-     sslserver -seVn -Rp -l $HOSTNAME 0 pop3 \
-     qmail-popup $HOSTNAME qmail-authuser true \
-     qmail-pop3d Maildir 2>&1 5>&1

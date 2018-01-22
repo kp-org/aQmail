@@ -1,1 +1,0 @@
-../../eQmail/eQmail-1.10-dev/remoteinfo6.c

@@ -298,7 +298,7 @@ void comm_do(fd_set *wfds, fd_set *rfds)
 	len = comm_buf.len;
 	w = write(fdout,comm_buf.s + comm_pos,len - comm_pos);
 	if (w <= 0) {
-	  if ((w == -1) && (errno == error_pipe))
+	  if ((w == -1) && (errno == EPIPE))
 	    senddied();
 	} else {
 	  comm_pos += w;
@@ -315,7 +315,7 @@ void comm_do(fd_set *wfds, fd_set *rfds)
       int r;
       r = read(fdin, &c, 1);
       if (r <= 0) {
-	if ((r == -1) && (errno != error_intr))
+	if ((r == -1) && (errno != EINTR))
 	  senddied();
       } else {
 	switch(c) {
@@ -408,12 +408,12 @@ void todo_do(fd_set *rfds)
 
   for (c = 0; c < CHANNELS; ++c) {
     fnmake_chanaddr(id,c);
-    if (unlink(fn.s) == -1) if (errno != error_noent)
+    if (unlink(fn.s) == -1) if (errno != ENOENT)
       { sendlog3("warning: qmail-todo: unable to unlink ",fn.s," for mess\n"); goto FAIL; }
   }
 
   fnmake_info(id);
-  if (unlink(fn.s) == -1) if (errno != error_noent)
+  if (unlink(fn.s) == -1) if (errno != ENOENT)
     { sendlog3("warning: qmail-todo: unable to unlink ",fn.s," for info\n"); goto FAIL; }
 
   fdnumber = open_excl(fn.s);
@@ -575,7 +575,7 @@ void reread(void)
   }
 }
 
-void main()
+int main()
 {
   datetime_sec wakeup;
   fd_set rfds;
@@ -600,7 +600,7 @@ void main()
  
   do {
     r = read(fdin, &c, 1);
-    if ((r == -1) && (errno != error_intr))
+    if ((r == -1) && (errno != EINTR))
       _exit(100); /* read failed probably qmail-send died */
   } while (r =! 1); /* we assume it is a 'S' */
  
@@ -628,7 +628,7 @@ void main()
     tv.tv_usec = 0;
 
     if (select(nfds,&rfds,&wfds,(fd_set *) 0,&tv) == -1)
-      if (errno == error_intr)
+      if (errno == EINTR)
         ;
       else
         sendlog1("warning: qmail-todo: trouble in select\n");

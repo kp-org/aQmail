@@ -1,7 +1,0 @@
-#!/bin/sh
-# WARNING: This file was auto-generated. Do not edit!
-# POSIX compliant usage of options.
-#!/bin/sh
-cd /var/qmail
-echo `find queue/mess -type f -print | wc -l`
-echo `find queue/todo/* -type f -print | wc -l`

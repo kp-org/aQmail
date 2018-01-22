@@ -1,9 +1,0 @@
-qmail-clean
-qmail-inject
-qmail-local
-qmail-lspawn
-qmail-send
-qmail-queue
-qmail-rspawn
-qmail-send
-qmail-start
